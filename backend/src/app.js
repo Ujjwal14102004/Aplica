@@ -27,11 +27,8 @@ const app = express();
 // CORS (frontend + credentials safe)
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://aplica-frontend.onrender.com" // frontend render URL
-    ],
-    credentials: true
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
   })
 );
 
