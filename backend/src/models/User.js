@@ -28,6 +28,21 @@ const userSchema = new mongoose.Schema(
     },
 
     /* =====================
+       Onboarding State
+    ====================== */
+    onboardingStep: {
+      type: String,
+      enum: [
+        "public",
+        "professional",
+        "portfolio",
+        "attachments",
+        "done"
+      ],
+      default: "public"
+    },
+
+    /* =====================
        Profile Completion
     ====================== */
     profileComplete: {
@@ -43,7 +58,7 @@ const userSchema = new mongoose.Schema(
         type: String
       },
       experience: {
-        type: Number // total experience in years (or years.months later)
+        type: Number // total experience in years
       }
     },
 
@@ -64,8 +79,8 @@ const userSchema = new mongoose.Schema(
        Step 3: Attachments
     ====================== */
     attachment: {
-      filename: String,       // stored filename
-      originalName: String,   // original uploaded name
+      filename: String,
+      originalName: String,
       mimeType: String,
       size: Number,
       note: String
