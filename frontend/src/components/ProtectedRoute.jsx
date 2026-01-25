@@ -4,10 +4,10 @@ import { getMe } from "../api/auth";
 import { useUser } from "../context/UserContext";
 
 const ONBOARDING_ROUTES = {
-  "public-profile": "/setup/PublicProfile",
-  "professional-info": "/setup/ProfessionalInfo",
-  "portfolio-socials": "/setup/PortfolioSocials",
-  attachments: "/setup/Attachments",
+  "public-profile": "/setup/public-profile",
+  "professional-info": "/setup/professional-info",
+  "portfolio-socials": "/setup/portfolio-socials",
+  attachments: "/setup/attachments",
 };
 
 const ProtectedRoute = () => {
@@ -19,9 +19,7 @@ const ProtectedRoute = () => {
     const checkAuth = async () => {
       try {
         const data = await getMe();
-
-        // ✅ backend now returns user directly
-        setUser(data);
+        setUser(data); // backend returns user directly
       } catch {
         setUser(null);
       } finally {
@@ -41,11 +39,11 @@ const ProtectedRoute = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  // 🔒 Onboarding NOT complete → force /setup/*
+  // 🔒 Onboarding NOT complete → force setup flow
   if (!user.profileComplete) {
     const correctPath =
       ONBOARDING_ROUTES[user.onboardingStep] ||
-      "/setup/PublicProfile";
+      "/setup/public-profile";
 
     if (location.pathname !== correctPath) {
       return <Navigate to={correctPath} replace />;
