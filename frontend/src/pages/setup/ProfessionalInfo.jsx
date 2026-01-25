@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import authFetch from "../../utils/authFetch";
 
-// Example icons (adjust paths as per your assets folder)
 import "./ProfessionalInfo.css";
 
 import designerIcon from "../../assets/designer.svg";
@@ -23,61 +21,90 @@ const categories = [
 
 const ProfessionalInfo = () => {
   const navigate = useNavigate();
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const [category, setCategory] = useState("");
   const [role, setRole] = useState("");
   const [years, setYears] = useState("");
   const [months, setMonths] = useState("");
   const [headline, setHeadline] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // 🔐 Guard (handled by layout, but safe)
+  // ✅ AUTH + FLOW GUARD (same as PublicProfile)
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("aplica_user"));
-    if (user?.profileComplete) {
-      navigate("/dashboard/home", { replace: true });
-    }
-  }, [navigate]);
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/profile/me`, {
+          credentials: "include"
+        });
+
+        if (res.status === 401) {
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        const data = await res.json();
+
+        // ⛔ Prevent skipping steps
+        if (data.onboardingStep !== "professional-info") {
+          navigate(`/setup/${data.onboardingStep}`, { replace: true });
+          return;
+        }
+
+        // (Optional prefill – safe even if empty)
+        if (data.professionalInfo) {
+          setCategory(data.professionalInfo.category || "");
+          setRole(data.professionalInfo.role || "");
+          setYears(data.professionalInfo?.experience?.years ?? "");
+          setMonths(data.professionalInfo?.experience?.months ?? "");
+          setHeadline(data.professionalInfo.headline || "");
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to fetch profile", err);
+      }
+    };
+
+    fetchProfile();
+  }, [navigate, BACKEND_URL]);
 
   const handleNext = async () => {
-    // 🔴 Validation
-    if (!category) {
-      alert("Please select a category");
-      return;
-    }
-
-    if (!role.trim()) {
-      alert("Role is required");
-      return;
-    }
-
-    if (years === "" || months === "") {
-      alert("Please enter your experience");
-      return;
-    }
-
-    if (Number(months) > 11) {
-      alert("Months should be between 0 and 11");
-      return;
-    }
+    // 🔴 Validation (unchanged)
+    if (!category) return alert("Please select a category");
+    if (!role.trim()) return alert("Role is required");
+    if (years === "" || months === "") return alert("Please enter your experience");
+    if (Number(months) > 11) return alert("Months should be between 0 and 11");
 
     try {
       setLoading(true);
 
-      await authFetch("/api/profile-setup/professional", {
-        method: "POST",
-        body: JSON.stringify({
-          category,
-          role: role.trim(),
-          experience: {
-            years: Number(years),
-            months: Number(months)
+      const res = await fetch(
+        `${BACKEND_URL}/api/profile/professional-info`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json"
           },
-          headline: headline.trim() || null
-        })
-      });
+          body: JSON.stringify({
+            category,
+            role: role.trim(),
+            experience: {
+              years: Number(years),
+              months: Number(months)
+            },
+            headline: headline.trim() || null,
+            onboardingStep: "portfolio-socials"
+          })
+        }
+      );
 
-      navigate("/dashboard/profile/portfolio");
+      if (!res.ok) {
+        throw new Error("Failed to save professional info");
+      }
+
+      navigate("/setup/portfolio-socials");
     } catch (err) {
       console.error("Professional info save failed:", err);
       alert("Failed to save professional info");
@@ -86,19 +113,19 @@ const ProfessionalInfo = () => {
     }
   };
 
+  if (loading) return <p>Loading...</p>;
+
   return (
     <div className="profile-setup professional-info">
       <h2>Professional Information</h2>
       <p>What best describes your field?</p>
 
-      {/* Category Tiles */}
       <div className="category-grid">
         {categories.map((item) => (
           <button
             key={item.id}
-            className={`category-card ${
-              category === item.id ? "active" : ""
-            }`}
+            type="button"
+            className={`category-card ${category === item.id ? "active" : ""}`}
             onClick={() => setCategory(item.id)}
           >
             <img src={item.icon} alt={item.label} />
@@ -107,7 +134,6 @@ const ProfessionalInfo = () => {
         ))}
       </div>
 
-      {/* Role */}
       <label>Your Role *</label>
       <input
         type="text"
@@ -116,7 +142,6 @@ const ProfessionalInfo = () => {
         onChange={(e) => setRole(e.target.value)}
       />
 
-      {/* Experience */}
       <label>Experience *</label>
       <div className="experience-row">
         <input
@@ -136,7 +161,6 @@ const ProfessionalInfo = () => {
         />
       </div>
 
-      {/* Headline */}
       <label>One-line About You (optional)</label>
       <input
         type="text"

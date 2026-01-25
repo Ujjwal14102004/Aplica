@@ -1,18 +1,50 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Attachments.css";
 
-// icons
 import attachmentIcon from "../../assets/attachment.svg";
 import logo from "../../assets/logo.svg";
 
 const Attachments = () => {
   const navigate = useNavigate();
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
   const fileInputRef = useRef(null);
 
   const [file, setFile] = useState(null);
   const [note, setNote] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // ✅ AUTH + FLOW GUARD
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/profile/me`, {
+          credentials: "include"
+        });
+
+        if (res.status === 401) {
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        const data = await res.json();
+
+        // ⛔ Enforce correct onboarding step
+        if (data.onboardingStep !== "attachments") {
+          navigate(`/setup/${data.onboardingStep}`, { replace: true });
+          return;
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to fetch profile", err);
+      }
+    };
+
+    fetchProfile();
+  }, [navigate, BACKEND_URL]);
 
   const handleFileClick = () => {
     fileInputRef.current?.click();
@@ -43,26 +75,40 @@ const Attachments = () => {
 
   const handleFinish = async () => {
     try {
-      setLoading(true);
+      setSaving(true);
 
-      // 🔒 TEMP: Skip upload, just complete setup
-      const token = localStorage.getItem("aplica_token");
-
-      await fetch("http://localhost:5000/api/profile-setup/complete", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`
+      // 🔒 Flow-first: skip actual file upload for now
+      const res = await fetch(
+        `${BACKEND_URL}/api/profile/attachments`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            note: note.trim() || null,
+            hasAttachment: Boolean(file),
+            onboardingStep: "completed",
+            profileComplete: true
+          })
         }
-      });
+      );
 
-      navigate("/dashboard/home");
+      if (!res.ok) {
+        throw new Error("Failed to complete onboarding");
+      }
+
+      navigate("/dashboard/home", { replace: true });
     } catch (err) {
       console.error("Finish setup failed:", err);
       alert("Failed to complete setup");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) return <p>Loading...</p>;
 
   return (
     <div className="attachment-page">
@@ -73,7 +119,6 @@ const Attachments = () => {
         Add any document you want to be attached in your mails
       </p>
 
-      {/* Upload Box */}
       <div className="upload-box" onClick={handleFileClick}>
         <img src={attachmentIcon} alt="Upload" />
         <p className="upload-title">
@@ -92,7 +137,6 @@ const Attachments = () => {
         />
       </div>
 
-      {/* Optional Note */}
       <div className="note-section">
         <label>Optional Note</label>
         <textarea
@@ -102,8 +146,8 @@ const Attachments = () => {
         />
       </div>
 
-      <button onClick={handleFinish} disabled={loading}>
-        {loading ? "Finishing..." : "Finish Setup"}
+      <button onClick={handleFinish} disabled={saving}>
+        {saving ? "Finishing..." : "Finish Setup"}
       </button>
     </div>
   );
