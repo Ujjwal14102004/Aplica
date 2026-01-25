@@ -4,10 +4,10 @@ import { getMe } from "../api/auth";
 import { useUser } from "../context/UserContext";
 
 const ONBOARDING_ROUTES = {
-  "public-profile": "/setup/public-profile",
-  "professional-info": "/setup/professional-info",
-  "portfolio-socials": "/setup/portfolio-socials",
-  attachments: "/setup/attachments",
+  "public-profile": "/setup/PublicProfile",
+  "professional-info": "/setup/ProfessionalInfo",
+  "portfolio-socials": "/setup/PortfolioSocials",
+  attachments: "/setup/Attachments",
 };
 
 const ProtectedRoute = () => {
