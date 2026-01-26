@@ -3,28 +3,12 @@ import { useNavigate } from "react-router-dom";
 
 import "./ProfessionalInfo.css";
 
-import designerIcon from "../../assets/designer.svg";
-import developerIcon from "../../assets/developer.svg";
-import writerIcon from "../../assets/writer.svg";
-import editorIcon from "../../assets/editor.svg";
-import marketerIcon from "../../assets/marketer.svg";
-import otherIcon from "../../assets/other.svg";
-
-const categories = [
-  { id: "designer", label: "Designer", icon: designerIcon },
-  { id: "developer", label: "Developer", icon: developerIcon },
-  { id: "writer", label: "Writer", icon: writerIcon },
-  { id: "editor", label: "Editor", icon: editorIcon },
-  { id: "marketer", label: "Marketer", icon: marketerIcon },
-  { id: "other", label: "Other", icon: otherIcon }
-];
-
 const ProfessionalInfo = () => {
   const navigate = useNavigate();
-  const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
-  const [category, setCategory] = useState("");
+  const BACKEND_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
   const [role, setRole] = useState("");
   const [years, setYears] = useState("");
   const [months, setMonths] = useState("");
@@ -32,18 +16,19 @@ const ProfessionalInfo = () => {
   const [saving, setSaving] = useState(false);
 
   const handleNext = async () => {
-    if (!category) return alert("Please select a category");
     if (!role.trim()) return alert("Role is required");
     if (years === "" || months === "")
       return alert("Please enter your experience");
     if (Number(months) > 11)
       return alert("Months should be between 0 and 11");
+    if (!headline.trim())
+      return alert("Headline is required");
 
     try {
       setSaving(true);
 
       const res = await fetch(
-        `${BACKEND_URL}/api/profile/professional`,
+        `${BACKEND_URL}/api/profile-setup/professional`,
         {
           method: "POST",
           credentials: "include",
@@ -51,14 +36,12 @@ const ProfessionalInfo = () => {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            category,
             role: role.trim(),
             experience: {
               years: Number(years),
               months: Number(months)
             },
-            headline: headline.trim() || null,
-            onboardingStep: "portfolio"
+            headline: headline.trim()
           })
         }
       );
@@ -67,7 +50,6 @@ const ProfessionalInfo = () => {
         throw new Error("Failed to save professional info");
       }
 
-      // ✅ Navigate using EXISTING routes
       navigate("/dashboard/profile/portfolio");
     } catch (err) {
       console.error("Professional info save failed:", err);
@@ -80,23 +62,6 @@ const ProfessionalInfo = () => {
   return (
     <div className="profile-setup professional-info">
       <h2>Professional Information</h2>
-      <p>What best describes your field?</p>
-
-      <div className="category-grid">
-        {categories.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={`category-card ${
-              category === item.id ? "active" : ""
-            }`}
-            onClick={() => setCategory(item.id)}
-          >
-            <img src={item.icon} alt={item.label} />
-            <span>{item.label}</span>
-          </button>
-        ))}
-      </div>
 
       <label>Your Role *</label>
       <input
@@ -125,7 +90,7 @@ const ProfessionalInfo = () => {
         />
       </div>
 
-      <label>One-line About You (optional)</label>
+      <label>One-line About You *</label>
       <input
         type="text"
         placeholder="UI/UX designer focused on SaaS and landing pages"
