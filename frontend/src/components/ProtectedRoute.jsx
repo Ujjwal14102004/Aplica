@@ -9,34 +9,46 @@ const ProtectedRoute = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const checkAuth = async () => {
+    let cancelled = false;
+
+    const checkAuthWithRetry = async () => {
       try {
         const me = await getMe();
-        setUser(me);          // ✅ authenticated
-      } catch (err) {
-        setUser(null);        // ✅ explicitly unauthenticated
-      } finally {
-        setLoading(false);
+        if (!cancelled) setUser(me);
+      } catch {
+        // ⏳ retry once after short delay (cookie propagation)
+        setTimeout(async () => {
+          try {
+            const me = await getMe();
+            if (!cancelled) setUser(me);
+          } catch {
+            if (!cancelled) setUser(null);
+          } finally {
+            if (!cancelled) setLoading(false);
+          }
+        }, 300); // 300ms is enough
+        return;
       }
+
+      if (!cancelled) setLoading(false);
     };
 
-    checkAuth();
+    checkAuthWithRetry();
+
+    return () => {
+      cancelled = true;
+    };
   }, [setUser]);
 
-  // ⏳ Still checking auth
   if (loading) {
     return <div>Checking authentication...</div>;
   }
 
-  // ❌ Definitely not authenticated
   if (user === null) {
     return <Navigate to="/auth" replace />;
   }
 
-  /**
-   * 🔒 Onboarding enforcement
-   * onboardingStep === "done" is treated as completed
-   */
+  // 🔒 Onboarding enforcement (safe)
   const isOnboardingIncomplete =
     user.profileComplete === false &&
     user.onboardingStep &&
@@ -44,7 +56,6 @@ const ProtectedRoute = () => {
 
   if (isOnboardingIncomplete) {
     const correctPath = `/dashboard/profile/${user.onboardingStep}`;
-
     if (location.pathname !== correctPath) {
       return <Navigate to={correctPath} replace />;
     }
