@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Attachments.css";
 
@@ -7,44 +7,15 @@ import logo from "../../assets/logo.svg";
 
 const Attachments = () => {
   const navigate = useNavigate();
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+  const BACKEND_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
   const fileInputRef = useRef(null);
 
   const [file, setFile] = useState(null);
   const [note, setNote] = useState("");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  // ✅ AUTH + FLOW GUARD
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/profile/me`, {
-          credentials: "include"
-        });
-
-        if (res.status === 401) {
-          navigate("/login", { replace: true });
-          return;
-        }
-
-        const data = await res.json();
-
-        // ⛔ Enforce correct onboarding step
-        if (data.onboardingStep !== "attachments") {
-          navigate(`/setup/${data.onboardingStep}`, { replace: true });
-          return;
-        }
-
-        setLoading(false);
-      } catch (err) {
-        console.error("Failed to fetch profile", err);
-      }
-    };
-
-    fetchProfile();
-  }, [navigate, BACKEND_URL]);
 
   const handleFileClick = () => {
     fileInputRef.current?.click();
@@ -77,21 +48,20 @@ const Attachments = () => {
     try {
       setSaving(true);
 
-      // 🔒 Flow-first: skip actual file upload for now
+      const formData = new FormData();
+      if (file) {
+        formData.append("file", file); // MUST be "file"
+      }
+      if (note.trim()) {
+        formData.append("note", note.trim());
+      }
+
       const res = await fetch(
-        `${BACKEND_URL}/api/profile/attachments`,
+        `${BACKEND_URL}/api/profile-setup/attachments`,
         {
           method: "POST",
           credentials: "include",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            note: note.trim() || null,
-            hasAttachment: Boolean(file),
-            onboardingStep: "completed",
-            profileComplete: true
-          })
+          body: formData
         }
       );
 
@@ -107,8 +77,6 @@ const Attachments = () => {
       setSaving(false);
     }
   };
-
-  if (loading) return <p>Loading...</p>;
 
   return (
     <div className="attachment-page">
