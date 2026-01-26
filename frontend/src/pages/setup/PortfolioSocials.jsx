@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./PortfolioSocials.css";
 
@@ -14,9 +14,10 @@ import driveIcon from "../../assets/Google Drive.svg";
 
 const PortfolioSocials = () => {
   const navigate = useNavigate();
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-  const [loading, setLoading] = useState(true);
+  const BACKEND_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
   const [saving, setSaving] = useState(false);
 
   const [links, setLinks] = useState({
@@ -31,51 +32,6 @@ const PortfolioSocials = () => {
     drive: ""
   });
 
-  // ✅ AUTH + FLOW GUARD
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/profile/me`, {
-          credentials: "include"
-        });
-
-        if (res.status === 401) {
-          navigate("/login", { replace: true });
-          return;
-        }
-
-        const data = await res.json();
-
-        // ⛔ Enforce onboarding order
-        if (data.onboardingStep !== "portfolio-socials") {
-          navigate(`/setup/${data.onboardingStep}`, { replace: true });
-          return;
-        }
-
-        // Optional prefill
-        if (data.portfolioSocials) {
-          setLinks({
-            portfolio: data.portfolioSocials.portfolio || "",
-            github: data.portfolioSocials.github || "",
-            dribbble: data.portfolioSocials.dribbble || "",
-            behance: data.portfolioSocials.behance || "",
-            linkedin: data.portfolioSocials.linkedin || "",
-            facebook: data.portfolioSocials.facebook || "",
-            instagram: data.portfolioSocials.instagram || "",
-            twitter: data.portfolioSocials.twitter || "",
-            drive: data.portfolioSocials.drive || ""
-          });
-        }
-
-        setLoading(false);
-      } catch (err) {
-        console.error("Failed to fetch profile", err);
-      }
-    };
-
-    fetchProfile();
-  }, [navigate, BACKEND_URL]);
-
   const handleChange = (key, value) => {
     setLinks((prev) => ({ ...prev, [key]: value }));
   };
@@ -85,7 +41,7 @@ const PortfolioSocials = () => {
       setSaving(true);
 
       const res = await fetch(
-        `${BACKEND_URL}/api/profile/portfolio-socials`,
+        `${BACKEND_URL}/api/profile-setup/portfolio`,
         {
           method: "POST",
           credentials: "include",
@@ -100,9 +56,7 @@ const PortfolioSocials = () => {
             linkedin: links.linkedin || null,
             facebook: links.facebook || null,
             instagram: links.instagram || null,
-            twitter: links.twitter || null,
-            drive: links.drive || null,
-            onboardingStep: "attachments"
+            twitter: links.twitter || null
           })
         }
       );
@@ -111,7 +65,8 @@ const PortfolioSocials = () => {
         throw new Error("Failed to save portfolio links");
       }
 
-      navigate("/setup/attachments");
+      // ✅ Correct next step
+      navigate("/dashboard/profile/attachments");
     } catch (err) {
       console.error("Portfolio save failed:", err);
       alert("Failed to save portfolio links");
@@ -119,8 +74,6 @@ const PortfolioSocials = () => {
       setSaving(false);
     }
   };
-
-  if (loading) return <p>Loading...</p>;
 
   return (
     <div className="portfolio-socials">
@@ -134,7 +87,6 @@ const PortfolioSocials = () => {
           value={links.portfolio}
           onChange={(e) => handleChange("portfolio", e.target.value)}
         />
-        <span className="add-link">+ Add Another Link</span>
       </div>
 
       <div className="social-grid">
