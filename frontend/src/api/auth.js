@@ -6,6 +6,14 @@ const api = axios.create({
 });
 
 export const getMe = async () => {
-  const res = await api.get("/auth/me");
-  return res.data;
+  const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
+    credentials: "include"
+  });
+
+  if (!res.ok) {
+    throw new Error("Unauthorized");
+  }
+
+  const data = await res.json();
+  return data.user;
 };
