@@ -10,18 +10,32 @@ const router = express.Router();
 ===================================== */
 router.post("/professional", auth, async (req, res) => {
   try {
-    const { role, experience } = req.body;
+    const { role, experience, headline } = req.body;
 
-    if (!role || experience === undefined) {
+    // 🔒 Validation
+    if (
+      !role ||
+      !headline?.trim() ||
+      !experience ||
+      typeof experience.years !== "number" ||
+      typeof experience.months !== "number"
+    ) {
       return res.status(400).json({
-        message: "Role and experience are required"
+        message: "Role, headline, and valid experience are required"
+      });
+    }
+
+    if (experience.months < 0 || experience.months > 11) {
+      return res.status(400).json({
+        message: "Experience months must be between 0 and 11"
       });
     }
 
     await User.findByIdAndUpdate(req.user._id, {
       professionalInfo: {
         role,
-        experience
+        experience,
+        headline: headline.trim()
       },
       onboardingStep: "portfolio"
     });
