@@ -12,9 +12,9 @@ const ProtectedRoute = () => {
     const checkAuth = async () => {
       try {
         const me = await getMe();
-        setUser(me);
+        setUser(me);          // ✅ authenticated
       } catch (err) {
-        setUser(undefined);
+        setUser(null);        // ✅ explicitly unauthenticated
       } finally {
         setLoading(false);
       }
@@ -28,17 +28,14 @@ const ProtectedRoute = () => {
     return <div>Checking authentication...</div>;
   }
 
-  // ❌ Not authenticated
-  if (user === undefined) {
+  // ❌ Definitely not authenticated
+  if (user === null) {
     return <Navigate to="/auth" replace />;
   }
 
   /**
    * 🔒 Onboarding enforcement
-   *
-   * IMPORTANT RULE:
-   * - onboardingStep === "done" → NEVER redirect to profile setup
-   * - treat it as completed onboarding
+   * onboardingStep === "done" is treated as completed
    */
   const isOnboardingIncomplete =
     user.profileComplete === false &&
