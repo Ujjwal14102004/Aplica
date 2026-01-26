@@ -14,7 +14,7 @@ const ProtectedRoute = () => {
         const me = await getMe();
         setUser(me);
       } catch (err) {
-        setUser(undefined); // 🔥 IMPORTANT: undefined ≠ null
+        setUser(undefined);
       } finally {
         setLoading(false);
       }
@@ -28,14 +28,26 @@ const ProtectedRoute = () => {
     return <div>Checking authentication...</div>;
   }
 
-  // ❌ Auth check finished AND user is missing
+  // ❌ Not authenticated
   if (user === undefined) {
     return <Navigate to="/auth" replace />;
   }
 
-  // 🔒 Onboarding enforcement
-  if (user && user.profileComplete === false) {
+  /**
+   * 🔒 Onboarding enforcement
+   *
+   * IMPORTANT RULE:
+   * - onboardingStep === "done" → NEVER redirect to profile setup
+   * - treat it as completed onboarding
+   */
+  const isOnboardingIncomplete =
+    user.profileComplete === false &&
+    user.onboardingStep &&
+    user.onboardingStep !== "done";
+
+  if (isOnboardingIncomplete) {
     const correctPath = `/dashboard/profile/${user.onboardingStep}`;
+
     if (location.pathname !== correctPath) {
       return <Navigate to={correctPath} replace />;
     }
