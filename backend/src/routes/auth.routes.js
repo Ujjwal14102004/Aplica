@@ -47,6 +47,15 @@ router.get(
         });
       }
 
+      /**
+       * 🔧 NORMALIZE LEGACY / INCONSISTENT USERS
+       * If onboardingStep is "done", profile MUST be complete
+       */
+      if (user.onboardingStep === "done" && user.profileComplete === false) {
+        user.profileComplete = true;
+        await user.save();
+      }
+
       // 2️⃣ Create JWT
       const token = jwt.sign(
         { id: user._id, email: user.email },
@@ -59,18 +68,16 @@ router.get(
         httpOnly: true,
         secure: true,
         sameSite: "none",
-        domain: ".onrender.com", // backend domain
+        domain: ".onrender.com",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      // 4️⃣ FINAL redirect logic (SAFE)
+      // 4️⃣ FINAL SAFE REDIRECT LOGIC
       let redirectPath;
 
       if (user.profileComplete) {
-        // ✅ Onboarding completed users
         redirectPath = "/dashboard/home";
       } else {
-        // 🚧 Users still onboarding
         redirectPath = `/dashboard/profile/${user.onboardingStep}`;
       }
 
@@ -86,7 +93,6 @@ router.get(
  * Get logged-in user
  */
 router.get("/me", authMiddleware, async (req, res) => {
-  // authMiddleware already attaches full user
   res.status(200).json(req.user);
 });
 
