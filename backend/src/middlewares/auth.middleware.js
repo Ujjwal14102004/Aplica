@@ -12,18 +12,18 @@ const authMiddleware = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 🔥 ALWAYS FETCH USER FROM DB
+    // 🔥 IMPORTANT: fetch full user
     const user = await User.findById(decoded.id);
 
     if (!user) {
       return res.status(401).json({ message: "User not found" });
     }
 
-    req.user = user;
+    req.user = user; // ✅ full mongoose user
     next();
   } catch (err) {
-    console.error("Auth error:", err.message);
-    return res.status(401).json({ message: "Invalid or expired token" });
+    console.error("Auth middleware error:", err.message);
+    return res.status(401).json({ message: "Invalid token" });
   }
 };
 
