@@ -27,7 +27,9 @@ const app = express();
 // CORS (frontend + credentials safe)
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin:  [
+      "https://aplica-neon.vercel.app",
+    ] ,
     credentials: true,
   })
 );
