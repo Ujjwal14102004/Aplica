@@ -47,7 +47,7 @@ const ProtectedRoute = () => {
   }
 
  // 🚨 IMPORTANT: do NOT redirect immediately on first null
-if (user === null && location.pathname !== "/auth") {
+ if (user === null && !loading) {
   return <Navigate to="/auth" replace />;
 }
 

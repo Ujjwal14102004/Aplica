@@ -11,18 +11,21 @@ const authMiddleware = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 🔥 decoded.id is the source of truth
+    if (!decoded?.id) {
+      return res.status(401).json({ message: "Invalid token payload" });
+    }
+
     const user = await User.findById(decoded.id);
 
     if (!user) {
       return res.status(401).json({ message: "User not found" });
     }
 
-    req.user = user; // FULL user object
+    req.user = user; // FULL mongoose doc
     next();
   } catch (err) {
-    console.error("JWT auth error:", err.message);
-    return res.status(401).json({ message: "Invalid or expired token" });
+    console.error("Auth middleware error:", err.message);
+    return res.status(401).json({ message: "Unauthorized" });
   }
 };
 
