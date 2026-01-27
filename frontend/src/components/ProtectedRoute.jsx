@@ -9,63 +9,42 @@ const ProtectedRoute = () => {
   const location = useLocation();
 
   useEffect(() => {
-    let cancelled = false;
-    let attempts = 0;
-
     const checkAuth = async () => {
       try {
         const me = await getMe();
-        if (!cancelled) {
-          setUser(me);
-          setLoading(false);
-        }
-      } catch (err) {
-        attempts += 1;
-
-        // 🔁 Retry once to allow OAuth cookie propagation
-        if (attempts < 2) {
-          setTimeout(checkAuth, 300);
-        } else {
-          if (!cancelled) {
-            setUser(null); // definitively unauthenticated
-            setLoading(false);
-          }
-        }
+        setUser(me); // ✅ authenticated
+      } catch {
+        setUser(null); // ❌ not authenticated
+      } finally {
+        setLoading(false);
       }
     };
 
     checkAuth();
-
-    return () => {
-      cancelled = true;
-    };
   }, [setUser]);
 
-  // ⏳ Still resolving auth
+  // ⏳ IMPORTANT: while checking, do NOTHING
   if (loading) {
     return <div>Checking authentication...</div>;
   }
 
- // 🚨 IMPORTANT: do NOT redirect immediately on first null
- if (user === null && !loading) {
-  return <Navigate to="/auth" replace />;
-}
+  // ❌ Only redirect AFTER loading is false
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
-
-  // 🔒 Onboarding enforcement (safe + final)
-  const isOnboardingIncomplete =
+  // 🔒 Onboarding enforcement
+  if (
     user.profileComplete === false &&
     user.onboardingStep &&
-    user.onboardingStep !== "done";
-
-  if (isOnboardingIncomplete) {
+    user.onboardingStep !== "done"
+  ) {
     const correctPath = `/dashboard/profile/${user.onboardingStep}`;
     if (location.pathname !== correctPath) {
       return <Navigate to={correctPath} replace />;
     }
   }
 
-  // ✅ Authenticated & allowed
   return <Outlet />;
 };
 
