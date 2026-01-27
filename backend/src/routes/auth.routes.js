@@ -92,3 +92,5 @@ router.get("/me", authMiddleware, async (req, res) => {
     profileComplete: req.user.profileComplete,
   });
 });
+
+export default router;
