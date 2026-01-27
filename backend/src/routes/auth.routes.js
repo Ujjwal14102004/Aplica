@@ -84,12 +84,8 @@ router.get(
  * Get logged-in user
  */
 router.get("/me", authMiddleware, async (req, res) => {
-  res.status(200).json({
-    _id: req.user._id,
-    email: req.user.email,
-    onboardingStep: req.user.onboardingStep,
-    profileComplete: req.user.profileComplete,
-  });
+  res.status(200).json(req.user); // req.user MUST be full User model
 });
+
 
 export default router;
