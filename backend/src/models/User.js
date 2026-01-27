@@ -2,79 +2,42 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    /* =====================
-       Auth / Identity
-    ====================== */
     email: {
       type: String,
       required: true,
       unique: true,
-      lowercase: true
     },
 
     googleId: {
       type: String,
       unique: true,
-      sparse: true
+      sparse: true,
     },
 
-    provider: {
-      type: String,
-      default: "google"
-    },
+    avatar: String,
 
-    avatar: {
-      type: String // google avatar OR uploaded avatar URL later
-    },
-
-    /* =====================
-       Onboarding State
-    ====================== */
     onboardingStep: {
       type: String,
       enum: ["public", "professional", "portfolio", "attachments", "done"],
-      default: "public"
+      default: "public",
     },
 
-    /* =====================
-       Profile Completion
-    ====================== */
     profileComplete: {
       type: Boolean,
-      default: false
+      default: false,
     },
 
-    /* =====================
-       Step 1: Professional Info
-    ====================== */
+    /* Step 1: Professional Info (NOT required initially) */
     professionalInfo: {
-      role: {
-        type: String,
-        required: true
-      },
+      role: { type: String },
+      headline: { type: String },
       experience: {
-        years: {
-          type: Number,
-          required: true,
-          min: 0
-        },
-        months: {
-          type: Number,
-          required: true,
-          min: 0,
-          max: 11
-        }
+        years: { type: Number },
+        months: { type: Number },
       },
-      headline: {
-        type: String,
-        required: true,
-        trim: true
-      }
     },
 
-    /* =====================
-       Step 2: Portfolio & Socials
-    ====================== */
+    /* Step 2 */
     portfolio: {
       portfolio: String,
       linkedin: String,
@@ -82,33 +45,27 @@ const userSchema = new mongoose.Schema(
       dribbble: String,
       behance: String,
       instagram: String,
-      twitter: String
+      twitter: String,
     },
 
-    /* =====================
-       Step 3: Attachments
-    ====================== */
+    /* Step 3 */
     attachment: {
       filename: String,
       originalName: String,
       mimeType: String,
       size: Number,
-      note: String
+      note: String,
     },
 
-    /* =====================
-       Step 4: Public Profile
-    ====================== */
+    /* Step 4 */
     publicProfile: {
       firstName: String,
       lastName: String,
       location: String,
-      avatar: String // uploaded profile picture URL (future)
-    }
+      avatar: String,
+    },
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
 export default mongoose.model("User", userSchema);
