@@ -1,32 +1,24 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// Google OAuth ONLY — single source of truth
 
-export const registerUser = async (email, password) => {
-  const res = await fetch(`${API_URL}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  return res.json();
-};
+const API_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:5000";
 
-export const verifyOtp = async (email, otp) => {
-  const res = await fetch(`${API_URL}/auth/verify-otp`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, otp }),
-  });
-  return res.json();
-};
+/**
+ * 🚫 REMOVED:
+ * - registerUser
+ * - loginUser
+ * - verifyOtp
+ *
+ * Reason:
+ * These were creating frontend-side auth state
+ * and conflicting with backend cookie auth.
+ */
 
-export const loginUser = async (email, password) => {
-  const res = await fetch(`${API_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  return res.json();
-};
-
+/**
+ * ✅ Google OAuth login
+ * Backend sets httpOnly cookie (aplica_token)
+ */
 export const googleLogin = () => {
   window.location.href = `${API_URL}/auth/google`;
 };
