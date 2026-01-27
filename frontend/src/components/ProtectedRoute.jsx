@@ -10,45 +10,48 @@ const ProtectedRoute = () => {
 
   useEffect(() => {
     let cancelled = false;
+    let attempts = 0;
 
-    const checkAuthWithRetry = async () => {
+    const checkAuth = async () => {
       try {
         const me = await getMe();
-        if (!cancelled) setUser(me);
-      } catch {
-        // ⏳ retry once after short delay (cookie propagation)
-        setTimeout(async () => {
-          try {
-            const me = await getMe();
-            if (!cancelled) setUser(me);
-          } catch {
-            if (!cancelled) setUser(null);
-          } finally {
-            if (!cancelled) setLoading(false);
-          }
-        }, 300); // 300ms is enough
-        return;
-      }
+        if (!cancelled) {
+          setUser(me);
+          setLoading(false);
+        }
+      } catch (err) {
+        attempts += 1;
 
-      if (!cancelled) setLoading(false);
+        // 🔁 Retry once to allow OAuth cookie propagation
+        if (attempts < 2) {
+          setTimeout(checkAuth, 300);
+        } else {
+          if (!cancelled) {
+            setUser(null); // definitively unauthenticated
+            setLoading(false);
+          }
+        }
+      }
     };
 
-    checkAuthWithRetry();
+    checkAuth();
 
     return () => {
       cancelled = true;
     };
   }, [setUser]);
 
+  // ⏳ Still resolving auth
   if (loading) {
     return <div>Checking authentication...</div>;
   }
 
+  // ❌ Auth resolved and user missing
   if (user === null) {
     return <Navigate to="/auth" replace />;
   }
 
-  // 🔒 Onboarding enforcement (safe)
+  // 🔒 Onboarding enforcement (safe + final)
   const isOnboardingIncomplete =
     user.profileComplete === false &&
     user.onboardingStep &&
@@ -61,6 +64,7 @@ const ProtectedRoute = () => {
     }
   }
 
+  // ✅ Authenticated & allowed
   return <Outlet />;
 };
 
