@@ -28,7 +28,7 @@ const app = express();
 app.use(
   cors({
     origin:  [
-      "https://aplica-neon.vercel.app",
+      "https://aplica-2-0.vercel.app/",
     ] ,
     credentials: true,
   })
